@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detektif Hobi: Misteri Jejak Kreativitas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Fredoka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Fredoka', 'cursive'],
+                    },
+                    colors: {
+                        detective: {
+                            amber: '#F59E0B',
+                            dark: '#1E293B',
+                            paper: '#FEF3C7',
+                            board: '#78350F',
+                            accent: '#D97706',
+                            card: '#FFFBEB',
+                            stampRed: '#DC2626',
+                            stampGreen: '#16A34A',
+                        }
+                    },
+                    boxShadow: {
+                        'detective': '0 10px 25px -5px rgba(120, 53, 15, 0.3), 0 8px 10px -6px rgba(120, 53, 15, 0.2)',
+                        'stamp': '0 0 0 4px currentColor, inset 0 0 0 2px currentColor',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #2D1B0F;
+            background-image: radial-gradient(#452410 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Corkboard Texture Effect */
+        .corkboard {
+            background-color: #B45309;
+            background-image: radial-gradient(#92400E 15%, transparent 16%), radial-gradient(#78350F 15%, transparent 16%);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+        }
+
+        /* Stamp Animations */
+        @keyframes stampIn {
+            0% { opacity: 0; transform: scale(3) rotate(-15deg); }
+            50% { opacity: 0.8; transform: scale(0.9) rotate(-5deg); }
+            100% { opacity: 1; transform: scale(1) rotate(-8deg); }
+        }
+        .animate-stamp {
+            animation: stampIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Magnifying Glass Pulse */
+        @keyframes pulseSearch {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+        }
+        .magnifier-anim {
+            animation: pulseSearch 2s infinite ease-in-out;
+        }
+
+        /* Paper Note styling */
+        .paper-note {
+            background: #FFFBEE;
+            box-shadow: 3px 3px 0px #D97706, 0 10px 15px -3px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .paper-note::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 15px;
+            background: rgba(239, 68, 68, 0.4);
+            border-radius: 2px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FDE68A;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D97706;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #B45309;
+        }
+    </style>
+</head>
+<body class="text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-amber-300 selection:text-amber-900">
+
+    <!-- TOP HEADER / HUD BAR -->
+    <header id="hud-bar" class="hidden sticky top-0 z-40 bg-amber-950/90 backdrop-blur border-b-4 border-amber-600 text-amber-100 px-4 py-3 shadow-lg">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <!-- Player Info & Badge -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-amber-500 border-2 border-amber-200 flex items-center justify-center text-xl shadow">
+                    🕵️‍♂️
+                </div>
+                <div>
+                    <span id="hud-player-name" class="font-display font-bold text-amber-300 text-lg tracking-wide block leading-tight">Detektif Player</span>
+                    <span class="text-xs text-amber-200/80 font-medium">Misi: Ekspresi Diri Hobi</span>
+                </div>
+            </div>
+
+            <!-- Stats Bar (Score, Evidence, Lives) -->
+            <div class="flex items-center flex-wrap gap-4 text-sm font-semibold">
+                <!-- Score -->
+                <div class="bg-amber-900/80 border border-amber-700/60 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+                    <span class="text-base">⭐</span>
+                    <span class="text-amber-200">Skor:</span>
+                    <span id="hud-score" class="text-amber-400 font-bold text-base">0</span>
+                    <span class="text-xs text-amber-300/60">/350</span>
+                </div>
+
+                <!-- Evidence Progress -->
+                <div class="bg-amber-900/80 border border-amber-700/60 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+                    <span class="text-base">🧩</span>
+                    <span class="text-amber-200">Bukti:</span>
+                    <span id="hud-evidence" class="text-emerald-400 font-bold text-base">0</span>
+                    <span class="text-xs text-amber-300/60">/30</span>
+                </div>
+
+                <!-- Lives / Chances -->
+                <div class="bg-amber-900/80 border border-amber-700/60 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+                    <span class="text-amber-200 text-xs mr-0.5">Kesempatan:</span>
+                    <div id="hud-lives" class="flex gap-1 text-base">
+                        <span>❤️</span><span>❤️</span><span>❤️</span>
+                    </div>
+                </div>
+
+                <!-- Detective Bag Trigger Button -->
+                <button onclick="toggleDetectiveBag()" class="bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow active:scale-95 text-xs sm:text-sm">
+                    🎒 Tas Detektif (<span id="bag-count">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <!-- Global Progress Bar -->
+        <div class="w-full bg-amber-950/60 rounded-full h-2 mt-2.5 overflow-hidden border border-amber-700/50">
+            <div id="hud-progress-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6 flex items-center justify-center">
+
+        <!-- ================= PAGE 1: WELCOME / INTRO SCREEN ================= -->
+        <section id="page-welcome" class="w-full max-w-2xl bg-amber-100 rounded-3xl p-6 sm:p-10 border-4 border-amber-700 shadow-detective text-center relative overflow-hidden my-auto">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-300 rounded-full blur-2xl opacity-50"></div>
+            
+            <div class="relative z-10">
+                <div class="inline-block p-4 rounded-full bg-amber-200 border-2 border-amber-400 mb-4 shadow-inner">
+                    <span class="text-6xl magnifier-anim inline-block">🔍</span>
+                </div>
+
+                <h1 class="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold text-amber-950 tracking-wide mb-2 leading-tight">
+                    DETEKTIF HOBI
+                </h1>
+                <h2 class="font-display text-xl sm:text-2xl text-amber-700 font-bold mb-4">
+                    Misteri Jejak Kreativitas
+                </h2>
+
+                <!-- Intro Story Box -->
+                <div class="paper-note p-4 sm:p-5 rounded-2xl mb-6 text-left border border-amber-300">
+                    <p class="italic text-amber-900 text-sm sm:text-base leading-relaxed">
+                        “Di papan kreativitas SD Gemilang, beberapa bukti penting tentang hobi dan kreativitas siswa tiba-tiba hilang! Hanya seorang Detektif Hobi sejati yang mampu menelusuri jejak karya Reno, menganalisis takrir media sosial, dan menemukan kembali 30 bukti misterius.”
+                    </p>
+                </div>
+
+                <p class="text-amber-800 font-medium mb-6 text-sm sm:text-base">
+                    Setiap hobi meninggalkan jejak. Setiap jawaban adalah petunjuk.<br>
+                    <span class="font-bold text-amber-950">Siapkah kamu mengumpulkan semua bukti?</span>
+                </p>
+
+                <!-- Name Input Form -->
+                <form onsubmit="handleStartGame(event)" class="space-y-4 max-w-md mx-auto">
+                    <div class="text-left">
+                        <label for="player-name" class="block font-display text-base font-bold text-amber-900 mb-1">
+                            🕵️ Siapa nama Detektif Hobi?
+                        </label>
+                        <input type="text" id="player-name" required placeholder="Masukkan nama panggilanmu..." 
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-amber-400 focus:border-amber-600 focus:ring-4 focus:ring-amber-200 outline-none text-amber-950 font-semibold text-lg shadow-inner bg-amber-50">
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-display text-xl font-bold py-4 px-8 rounded-2xl border-b-4 border-amber-800 shadow-lg transform active:scale-95 transition-all flex items-center justify-center gap-2">
+                        🚀 MULAI INVESTIGASI
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 2: MAP / MISSION SELECTION ================= -->
+        <section id="page-map" class="hidden w-full max-w-4xl bg-amber-900 rounded-3xl p-6 sm:p-8 border-4 border-amber-600 shadow-detective relative corkboard">
+            <div class="bg-amber-950/80 rounded-2xl p-4 sm:p-6 text-amber-100 border-2 border-amber-700/80 mb-6 backdrop-blur flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="font-display text-2xl sm:text-3xl font-bold text-amber-300">Peta Lokasi Investigasi</h2>
+                    <p class="text-sm text-amber-200/80">Selesaikan setiap misi secara berurutan untuk membuka lokasi kasus berikutnya!</p>
+                </div>
+                <div class="bg-amber-900/90 border border-amber-600 px-4 py-2 rounded-xl text-center">
+                    <span class="text-xs text-amber-300 block font-semibold">STATUS KASUS</span>
+                    <span id="map-status-text" class="font-bold text-amber-100">0/5 Misi Selesai</span>
+                </div>
+            </div>
+
+            <!-- Missions Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <!-- Mission 1 Card -->
+                <div id="mission-card-1" onclick="startMission(1)" class="cursor-pointer bg-amber-50 rounded-2xl p-5 border-4 border-amber-400 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all relative overflow-hidden group">
+                    <div class="absolute top-3 right-3 bg-amber-200 text-amber-900 text-xs font-extrabold px-2.5 py-1 rounded-full border border-amber-400">
+                        10 PG
+                    </div>
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">🔍</div>
+                    <h3 class="font-display font-bold text-xl text-amber-950 mb-1">Misi 1: Ruang Bukti Reno</h3>
+                    <p class="text-xs text-amber-800 mb-3">Analisis 10 kasus pilihan ganda tunggal seputar hobi & karya Reno.</p>
+                    <div class="flex justify-between items-center text-xs font-bold pt-2 border-t border-amber-200">
+                        <span class="text-amber-700">100 Poin Maks</span>
+                        <span id="m1-status" class="px-2 py-0.5 rounded bg-amber-200 text-amber-900">Buka Misi 🔓</span>
+                    </div>
+                </div>
+
+                <!-- Mission 2 Card -->
+                <div id="mission-card-2" class="opacity-60 cursor-not-allowed bg-amber-100/90 rounded-2xl p-5 border-4 border-amber-300 shadow relative overflow-hidden transition-all">
+                    <div class="absolute top-3 right-3 bg-amber-300 text-amber-900 text-xs font-extrabold px-2.5 py-1 rounded-full border border-amber-400">
+                        5 MCMA
+                    </div>
+                    <div class="text-4xl mb-3">🧪</div>
+                    <h3 class="font-display font-bold text-xl text-amber-950 mb-1">Misi 2: Lab Kreativitas</h3>
+                    <p class="text-xs text-amber-800 mb-3">Pilih SEMUA bukti yang benar pada 5 kasus pilihan ganda kompleks.</p>
+                    <div class="flex justify-between items-center text-xs font-bold pt-2 border-t border-amber-200">
+                        <span class="text-amber-700">50 Poin Maks</span>
+                        <span id="m2-status" class="px-2 py-0.5 rounded bg-amber-300/80 text-amber-950">Terkunci 🔒</span>
+                    </div>
+                </div>
+
+                <!-- Mission 3 Card -->
+                <div id="mission-card-3" class="opacity-60 cursor-not-allowed bg-amber-100/90 rounded-2xl p-5 border-4 border-amber-300 shadow relative overflow-hidden transition-all">
+                    <div class="absolute top-3 right-3 bg-amber-300 text-amber-900 text-xs font-extrabold px-2.5 py-1 rounded-full border border-amber-400">
+                        5 B/S
+                    </div>
+                    <div class="text-4xl mb-3">⚖️</div>
+                    <h3 class="font-display font-bold text-xl text-amber-950 mb-1">Misi 3: Ruang Interogasi</h3>
+                    <p class="text-xs text-amber-800 mb-3">Uji kebenaran 5 fakta kasus dengan stempel Valid / Tidak Valid.</p>
+                    <div class="flex justify-between items-center text-xs font-bold pt-2 border-t border-amber-200">
+                        <span class="text-amber-700">50 Poin Maks</span>
+                        <span id="m3-status" class="px-2 py-0.5 rounded bg-amber-300/80 text-amber-950">Terkunci 🔒</span>
+                    </div>
+                </div>
+
+                <!-- Mission 4 Card -->
+                <div id="mission-card-4" class="opacity-60 cursor-not-allowed bg-amber-100/90 rounded-2xl p-5 border-4 border-amber-300 shadow relative overflow-hidden transition-all">
+                    <div class="absolute top-3 right-3 bg-amber-300 text-amber-900 text-xs font-extrabold px-2.5 py-1 rounded-full border border-amber-400">
+                        5 Isian
+                    </div>
+                    <div class="text-4xl mb-3">🔐</div>
+                    <h3 class="font-display font-bold text-xl text-amber-950 mb-1">Misi 4: Brankas Kata</h3>
+                    <p class="text-xs text-amber-800 mb-3">Ketik kata kunci rahasia untuk membuka 5 brankas istilah hobi.</p>
+                    <div class="flex justify-between items-center text-xs font-bold pt-2 border-t border-amber-200">
+                        <span class="text-amber-700">50 Poin Maks</span>
+                        <span id="m4-status" class="px-2 py-0.5 rounded bg-amber-300/80 text-amber-950">Terkunci 🔒</span>
+                    </div>
+                </div>
+
+                <!-- Mission 5 Card -->
+                <div id="mission-card-5" class="opacity-60 cursor-not-allowed bg-amber-100/90 rounded-2xl p-5 border-4 border-amber-300 shadow relative overflow-hidden transition-all md:col-span-2 lg:col-span-2">
+                    <div class="absolute top-3 right-3 bg-amber-300 text-amber-900 text-xs font-extrabold px-2.5 py-1 rounded-full border border-amber-400">
+                        5 Uraian
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="text-4xl">🎓</div>
+                        <div>
+                            <h3 class="font-display font-bold text-xl text-amber-950 mb-1">Misi 5: Dewan Detektif Senior</h3>
+                            <p class="text-xs text-amber-800 mb-3">Tulis analisis mendalammu untuk 5 kasus uraian HOTS di hadapan dewan penguji.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-bold pt-2 border-t border-amber-200 mt-2">
+                        <span class="text-amber-700">100 Poin Maks</span>
+                        <span id="m5-status" class="px-2 py-0.5 rounded bg-amber-300/80 text-amber-950">Terkunci 🔒</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 3: QUESTION INVESTIGATION ARENA ================= -->
+        <section id="page-question" class="hidden w-full max-w-3xl bg-amber-50 rounded-3xl p-5 sm:p-8 border-4 border-amber-700 shadow-detective relative">
+            
+            <!-- Question Header Info -->
+            <div class="flex justify-between items-center border-b-2 border-amber-200 pb-4 mb-5">
+                <div>
+                    <span id="q-mission-badge" class="bg-amber-200 text-amber-900 font-display font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider">
+                        MISI 1 — RUANG BUKTI RENO
+                    </span>
+                    <h3 id="q-case-number" class="font-display text-2xl font-extrabold text-amber-950 mt-1">
+                        🔎 KASUS #01
+                    </h3>
+                </div>
+                
+                <!-- Hint Trigger Button -->
+                <button onclick="useHint()" id="btn-hint" class="bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 font-semibold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 transition">
+                    💡 Minta Petunjuk (<span id="hint-count">3</span>)
+                </button>
+            </div>
+
+            <!-- Hint Display Box (Hidden by default) -->
+            <div id="hint-box" class="hidden mb-4 p-3 bg-amber-100 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-2 animate-bounce">
+                <span>💡</span>
+                <div>
+                    <span class="font-bold">Petunjuk Detektif (-2 Poin):</span>
+                    <p id="hint-text" class="mt-0.5">---</p>
+                </div>
+            </div>
+
+            <!-- Question Stem Paper -->
+            <div class="paper-note p-5 rounded-2xl mb-6 border border-amber-200">
+                <p id="q-stem" class="text-base sm:text-lg font-semibold text-amber-950 leading-relaxed">
+                    [Teks soal akan dimuat di sini]
+                </p>
+            </div>
+
+            <!-- Dynamic Options Container -->
+            <form id="q-form" onsubmit="handleAnswerSubmit(event)" class="space-y-4">
+                <div id="options-container" class="space-y-3">
+                    <!-- Dynamic Radios / Checkboxes / Inputs rendered via JavaScript -->
+                </div>
+
+                <!-- Submit Action Bar -->
+                <div class="pt-4 flex justify-end">
+                    <button type="submit" id="btn-submit"
+                        class="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-display text-lg font-bold py-3.5 px-8 rounded-2xl border-b-4 border-emerald-900 shadow-md active:scale-95 transition-all flex items-center gap-2">
+                        📌 Kirim Bukti Analisis
+                    </button>
+                </div>
+            </form>
+
+            <!-- Feedback Modal Overlay / Inline Banner -->
+            <div id="feedback-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-amber-50 rounded-3xl p-6 sm:p-8 max-w-lg w-full border-4 border-amber-600 shadow-2xl relative animate-stamp text-center">
+                    
+                    <div id="feedback-icon" class="text-6xl mb-3">🔍</div>
+                    
+                    <h3 id="feedback-title" class="font-display text-2xl font-bold mb-2 text-amber-950">
+                        Bukti Berhasil Ditemukan!
+                    </h3>
+                    
+                    <p id="feedback-text" class="text-amber-900 text-sm sm:text-base mb-6 leading-relaxed">
+                        [Penjelasan edukatif materi soal]
+                    </p>
+
+                    <div id="feedback-points" class="mb-6 font-display font-bold text-amber-700 bg-amber-200/80 py-2 rounded-xl text-lg">
+                        +10 Poin Detektif ⭐
+                    </div>
+
+                    <button onclick="nextQuestion()" 
+                        class="w-full bg-amber-600 hover:bg-amber-700 text-white font-display text-lg font-bold py-3.5 px-6 rounded-2xl border-b-4 border-amber-800 shadow-lg transition active:scale-95">
+                        Lanjut ke Kasus Berikutnya ➡️
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 4: FINAL CERTIFICATE / RESULTS ================= -->
+        <section id="page-results" class="hidden w-full max-w-3xl bg-amber-100 rounded-3xl p-6 sm:p-10 border-4 border-amber-700 shadow-detective text-center relative overflow-hidden">
+            
+            <div class="inline-block px-4 py-1.5 rounded-full bg-amber-300 text-amber-950 font-display font-bold text-xs uppercase tracking-widest mb-3 border border-amber-400">
+                🎉 LAPORAN RESMI KEPOLISIAN SEKOLAH
+            </div>
+
+            <h1 class="font-display text-3xl sm:text-4xl font-extrabold text-amber-950 mb-1">
+                KASUS BERHASIL DIPECAHKAN!
+            </h1>
+            <p class="text-amber-800 font-medium mb-6 text-sm">
+                Selamat, <span id="res-player-name" class="font-bold text-amber-950">Detektif Budi</span>! Seluruh bukti hobi telah dikumpulkan.
+            </p>
+
+            <!-- Certificate Card Frame -->
+            <div class="paper-note p-6 sm:p-8 rounded-3xl border-4 border-amber-600 max-w-xl mx-auto mb-8 shadow-xl relative">
+                
+                <!-- Badge Title -->
+                <div id="res-badge-icon" class="text-6xl mb-2">🏆</div>
+                <h2 id="res-level-title" class="font-display text-2xl sm:text-3xl font-extrabold text-amber-900 mb-2">
+                    MASTER DETEKTIF HOBI
+                </h2>
+                <p id="res-level-desc" class="text-xs sm:text-sm text-amber-800 italic mb-6">
+                    “Analisis luar biasa! Kamu memiliki pemahaman sempurna tentang ekspresi diri, manfaat hobi, dan kepedulian lingkungan!”
+                </p>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-3 sm:gap-4 text-left">
+                    <div class="bg-amber-200/70 p-3 rounded-xl border border-amber-300">
+                        <span class="text-xs text-amber-800 font-semibold block">Skor Mentah</span>
+                        <span id="res-score-raw" class="font-display text-2xl font-bold text-amber-950">298 / 350</span>
+                    </div>
+
+                    <div class="bg-amber-200/70 p-3 rounded-xl border border-amber-300">
+                        <span class="text-xs text-amber-800 font-semibold block">Nilai Akhir (0-100)</span>
+                        <span id="res-grade-final" class="font-display text-2xl font-bold text-emerald-700">85.1</span>
+                    </div>
+
+                    <div class="bg-amber-200/70 p-3 rounded-xl border border-amber-300">
+                        <span class="text-xs text-amber-800 font-semibold block">Bukti Ditemukan</span>
+                        <span id="res-correct-count" class="font-display text-xl font-bold text-amber-950">27 dari 30</span>
+                    </div>
+
+                    <div class="bg-amber-200/70 p-3 rounded-xl border border-amber-300">
+                        <span class="text-xs text-amber-800 font-semibold block">Tingkat Akurasi</span>
+                        <span id="res-accuracy" class="font-display text-xl font-bold text-amber-950">90%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row justify-center gap-3 max-w-md mx-auto">
+                <button onclick="showReviewPage()" 
+                    class="bg-amber-600 hover:bg-amber-700 text-white font-display font-bold py-3 px-6 rounded-2xl border-b-4 border-amber-900 shadow transition active:scale-95 text-base flex-1">
+                    📋 Lihat Pembahasan
+                </button>
+                <button onclick="restartGame()" 
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold py-3 px-6 rounded-2xl border-b-4 border-emerald-900 shadow transition active:scale-95 text-base flex-1">
+                    🔄 Main Lagi
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 5: REVIEW / PEMBAHASAN PAGE ================= -->
+        <section id="page-review" class="hidden w-full max-w-4xl bg-amber-50 rounded-3xl p-6 sm:p-8 border-4 border-amber-700 shadow-detective">
+            <div class="flex justify-between items-center border-b-2 border-amber-300 pb-4 mb-6">
+                <div>
+                    <h2 class="font-display text-2xl sm:text-3xl font-bold text-amber-950">📋 Pembahasan & Evaluasi Kasus</h2>
+                    <p class="text-xs sm:text-sm text-amber-800">Pelajari kunci jawaban dan penjelasan untuk meningkatkan kemampuan analisismu!</p>
+                </div>
+                <button onclick="showPage('results')" class="bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border border-amber-400">
+                    ⬅️ Kembali ke Hasil
+                </button>
+            </div>
+
+            <!-- Review Items Container -->
+            <div id="review-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DETECTIVE BAG / INVENTORY MODAL -->
+    <div id="modal-bag" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-amber-100 rounded-3xl p-6 max-w-md w-full border-4 border-amber-700 shadow-2xl relative corkboard">
+            <div class="flex justify-between items-center border-b-2 border-amber-600/50 pb-3 mb-4 text-amber-100">
+                <h3 class="font-display text-2xl font-bold text-amber-200">🎒 Tas Koleksi Bukti</h3>
+                <button onclick="toggleDetectiveBag()" class="text-amber-300 hover:text-white font-bold text-xl">✕</button>
+            </div>
+
+            <div id="bag-items-grid" class="grid grid-cols-2 gap-3">
+                <!-- Dynamic Badges -->
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="text-center py-3 text-amber-300/60 text-xs font-medium">
+        Detektif Hobi: Misteri Jejak Kreativitas &copy; Mata Pelajaran Bahasa Indonesia SD Kelas V
+    </footer>
+
+    <!-- JS GAME LOGIC -->
+    <script>
+        /* ==========================================================================
+           QUESTION DATABASE (30 Questions across 5 Missions)
+           ========================================================================== */
+        const QUESTIONS = [
+            // ---------------- MISSION 1: Ruang Bukti Reno (10 Single Choice PG) ----------------
+            {
+                id: 1,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #01 — Penghematan & Limbah",
+                stem: "Apa alasan utama Reno memanfaatkan kardus dan botol plastik bekas untuk membuat mainan?",
+                options: [
+                    "A. Karena kardus bekas dijual dengan harga yang sangat mahal.",
+                    "B. Untuk menghemat uang saku dan memanfaatkan limbah menjadi barang berguna.",
+                    "C. Karena mainan buatan toko tidak menarik bagi teman-temannya.",
+                    "D. Supaya rumahnya penuh dengan tumpukan barang bekas."
+                ],
+                key: 1, // Option B (Index 1)
+                explanation: "Reno memanfaatkan kardus dan botol bekas untuk menghemat uang saku sekaligus mengolah limbah sampah menjadi barang yang bermanfaat.",
+                hint: "Fikirkan tentang manfaat lingkungan dan efisiensi biaya."
+            },
+            {
+                id: 2,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #02 — Teks Takrir Media Sosial",
+                stem: "Manakah dari kalimat berikut yang merupakan contoh takrir (caption) media sosial yang informatif dan menginspirasi tentang hobi?",
+                options: [
+                    "A. 'Ini mainanku, tidak boleh ada yang pinjam!'",
+                    "B. 'Mengubah kardus bekas menjadi rumah boneka impian! Mari kurangi sampah dengan berkreasi. #DaurUlangKreatif'",
+                    "C. 'Beli mainan baru memang paling menyenangkan di dunia.'",
+                    "D. 'Hari ini sangat membosankan tidak ada pekerjaan.'"
+                ],
+                key: 1,
+                explanation: "Takrir yang baik memuat kalimat yang informatif, santun, mengajak kebaikan, serta dilengkapi tagar relevan.",
+                hint: "Cari kalimat yang memuat kalimat positif, pesan daur ulang, dan tagar (#)."
+            },
+            {
+                id: 3,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #03 — Ekspresi Perasaan",
+                stem: "Kata yang paling tepat untuk menggambarkan perasaan Reno saat berhasil menyelesaikan karya kerajinannya dari barang bekas adalah...",
+                options: [
+                    "A. Kecewa dan lelah",
+                    "B. Bangga dan bahagia",
+                    "C. Cemas dan ragu",
+                    "D. Sedih dan tertekan"
+                ],
+                key: 1,
+                explanation: "Keberhasilan menciptakan sesuatu dari hasil karya sendiri menumbuhkan rasa bangga dan bahagia atas capaian kreativitas.",
+                hint: "Pilih kata emosi yang bernilai positif."
+            },
+            {
+                id: 4,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #04 — Fungsi Tagar (#)",
+                stem: "Penggunaan tagar (hashtag) seperti #KreativitasAnak pada unggahan karya hobi bertujuan untuk...",
+                options: [
+                    "A. Menyembunyikan postingan agar tidak terlihat orang lain.",
+                    "B. Mengelompokkan kata kunci agar unggahan mudah ditemukan dan menginspirasi orang lain.",
+                    "C. Mengganti judul buku cetak pelajaran sekolah.",
+                    "D. Menghapus komentar negatif secara otomatis."
+                ],
+                key: 1,
+                explanation: "Tagar (#) berfungsi untuk mengelompokkan topik/kata kunci agar karya mudah dicari oleh pengguna internet lain.",
+                hint: "Tagar memudahkan pencarian topik di dunia digital."
+            },
+            {
+                id: 5,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #05 — Manfaat Hobi",
+                stem: "Manakah manfaat utama dari memiliki hobi yang positif bagi perkembangan diri siswa?",
+                options: [
+                    "A. Menghabiskan seluruh waktu belajar hanya untuk bermain.",
+                    "B. Mengembangkan bakat, melatih kesabaran, dan meningkatkan percaya diri.",
+                    "C. Membuat siswa terisolasi dari lingkungan pertemanan.",
+                    "D. Mengurangi konsentrasi saat mendengarkan penjelasan guru."
+                ],
+                key: 1,
+                explanation: "Hobi positif membantu mengasah bakat, kesabaran, serta membangun karakter percaya diri.",
+                hint: "Cari manfaat baik untuk kepribadian dan potensi siswa."
+            },
+            {
+                id: 6,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #06 — Dukungan Keluarga",
+                stem: "Sikap keluarga Reno yang paling tepat dalam mendukung kegiatan hobinya adalah...",
+                options: [
+                    "A. Melarang Reno karena mengumpulkan barang bekas dianggap mengotori rumah.",
+                    "B. Memberi apresiasi, fasilitas tempat berkreasi, dan dukungan moral.",
+                    "C. Memaksa Reno menjual semua karya mainannya dengan harga mahal.",
+                    "D. Acuh tak acuh terhadap hasil karya Reno."
+                ],
+                key: 1,
+                explanation: "Dukungan keluarga terbaik berupa apresiasi, ruang berkreasi, dan semangat moral.",
+                hint: "Pilih bentuk dukungan positif dari orang tua."
+            },
+            {
+                id: 7,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #07 — Kepedulian Lingkungan",
+                stem: "Mengapa memanfaatkan barang bekas untuk hobi dapat dikategorikan sebagai tindakan peduli lingkungan?",
+                options: [
+                    "A. Karena dapat meningkatkan jumlah tempat sampah di sekolah.",
+                    "B. Karena mengurangi volume sampah plastik dan kardus yang dibuang ke lingkungan.",
+                    "C. Karena membuat harga plastik bekas menjadi sangat mahal.",
+                    "D. Karena barang bekas tidak bisa didaur ulang sama sekali."
+                ],
+                key: 1,
+                explanation: "Dengan memakai kembali botol & kardus bekas, jumlah limbah yang mencemari lingkungan berkurang.",
+                hint: "Berhubungan dengan pengurangan jumlah sampah (reduce/reuse)."
+            },
+            {
+                id: 8,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #08 — Teks Petunjuk/Prosedur",
+                stem: "Unsur paling penting dalam sebuah teks petunjuk/instruksi membuat karya hobi adalah...",
+                options: [
+                    "A. Menggunakan bahasa yang rumit dan puisi yang panjang.",
+                    "B. Langkah-langkah yang berurutan, jelas, dan mudah diikuti.",
+                    "C. Tidak menyertakan alat dan bahan yang dibutuhkan.",
+                    "D. Menyembunyikan hasil akhir pembuatan karya."
+                ],
+                key: 1,
+                explanation: "Teks prosedur yang efektif menyajikan langkah kerja yang jelas, logis, dan berurutan.",
+                hint: "Instruksi harus jelas dan mudah dipraktikkan."
+            },
+            {
+                id: 9,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #09 — Kata Dasar Berimbuhan",
+                stem: "Kata dasar dari kata berimbuhan 'menginspirasi' adalah...",
+                options: [
+                    "A. Inspirasi",
+                    "B. Spirasi",
+                    "C. Menginspiras",
+                    "D. Tiras"
+                ],
+                key: 0, // Option A (Index 0)
+                explanation: "Imbuhan me- + inspirasi menjadi menginspirasi.",
+                hint: "Kata bentukan dari imbuhan me- ditambah kata dasar berawal huruf I."
+            },
+            {
+                id: 10,
+                mission: 1,
+                missionTitle: "MISI 1 — RUANG BUKTI RENO",
+                type: "single",
+                caseTitle: "KASUS #10 — Jenis Teks Tutorial",
+                stem: "Ketika Reno membagikan tutorial membuat mainan dari kardus, jenis teks yang ia gunakan adalah...",
+                options: [
+                    "A. Teks Narasi Rekon",
+                    "B. Teks Prosedur/Petunjuk",
+                    "C. Teks Dongeng Fabel",
+                    "D. Teks Iklan Komersial"
+                ],
+                key: 1,
+                explanation: "Teks tutorial berisi tahapan cara membuat sesuatu yang tergolong dalam Teks Prosedur/Petunjuk.",
+                hint: "Teks yang berisi tahapan langkah demi langkah."
+            },
+
+            // ---------------- MISSION 2: Laboratorium Kreativitas (5 Multiple Choice MCMA) ----------------
+            {
+                id: 11,
+                mission: 2,
+                missionTitle: "MISI 2 — LABORATORIUM KREATIVITAS",
+                type: "mcma",
+                caseTitle: "KASUS #11 — Manfaat Daur Ulang",
+                stem: "Manakah yang termasuk manfaat daur ulang barang bekas untuk hobi? (Pilih SEMUA jawaban yang benar!)",
+                options: [
+                    "A. Mengurangi jumlah limbah sampah plastik dan kardus",
+                    "B. Melatih kreativitas dan inovasi diri",
+                    "C. Mengotori lingkungan rumah dan sekolah",
+                    "D. Menghemat biaya untuk membeli bahan baku karya"
+                ],
+                keys: [0, 1, 3], // A, B, D are correct
+                explanation: "Daur ulang barang bekas bermanfaat mengurangi sampah, mengasah kreativitas, dan menghemat biaya.",
+                hint: "Pilih 3 pernyataan bernilai positif mengenai daur ulang!"
+            },
+            {
+                id: 12,
+                mission: 2,
+                missionTitle: "MISI 2 — LABORATORIUM KREATIVITAS",
+                type: "mcma",
+                caseTitle: "KASUS #12 — Ciri Takrir Edukatif",
+                stem: "Manakah yang merupakan ciri-ciri takrir (caption) media sosial yang santun dan edukatif? (Pilih SEMUA jawaban yang benar!)",
+                options: [
+                    "A. Menggunakan bahasa yang sopan dan mudah dipahami",
+                    "B. Memuat kalimat ajakan positif atau pesan moral",
+                    "C. Mengandung unsur ejekan kepada karya orang lain",
+                    "D. Disertai tagar (#) yang relevan dengan topik"
+                ],
+                keys: [0, 1, 3], // A, B, D
+                explanation: "Takrir santun ditulis dengan bahasa sopan, ajakan positif, serta disertai tagar relevan.",
+                hint: "Hindari kalimat yang mengandung ajakan negatif atau mengejek."
+            },
+            {
+                id: 13,
+                mission: 2,
+                missionTitle: "MISI 2 — LABORATORIUM KREATIVITAS",
+                type: "mcma",
+                caseTitle: "KASUS #13 — Bentuk Dukungan Keluarga",
+                stem: "Apa saja bukti dukungan orang tua/keluarga terhadap pengembangan hobi anak? (Pilih SEMUA jawaban yang benar!)",
+                options: [
+                    "A. Menyediakan ruang/wadah yang aman untuk berkreasi",
+                    "B. Memberikan pujian dan kritik yang membangun",
+                    "C. Melarang anak menyentuh barang bekas yang aman",
+                    "D. Mendampingi anak saat membagikan karya di media sosial"
+                ],
+                keys: [0, 1, 3], // A, B, D
+                explanation: "Dukungan keluarga diwujudkan lewat penyediaan ruang, masukan membangun, dan pendampingan positif.",
+                hint: "Ada 3 tindakan dukungan orang tua yang tepat."
+            },
+            {
+                id: 14,
+                mission: 2,
+                missionTitle: "MISI 2 — LABORATORIUM KREATIVITAS",
+                type: "mcma",
+                caseTitle: "KASUS #14 — Peralatan Kerajinan Kardus",
+                stem: "Manakah alat dan bahan yang biasa digunakan Reno dalam membuat kerajinan dari kardus bekas? (Pilih SEMUA jawaban yang benar!)",
+                options: [
+                    "A. Gunting dan cutter dengan pengawasan",
+                    "B. Lem perekat atau isolasi",
+                    "C. Semen dan bahan bangunan keras",
+                    "D. Cat warna atau kertas lipat hiasan"
+                ],
+                keys: [0, 1, 3], // A, B, D
+                explanation: "Membuat karya kardus memerlukan pemotong (gunting/cutter), perekat (lem/isolasi), dan pewarna hiasan.",
+                hint: "Semen tidak dipakai untuk kerajinan kertas/kardus ringan."
+            },
+            {
+                id: 15,
+                mission: 2,
+                missionTitle: "MISI 2 — LABORATORIUM KREATIVITAS",
+                type: "mcma",
+                caseTitle: "KASUS #15 — Etika Presentasi Hobi",
+                stem: "Hal-hal apa saja yang harus diperhatikan saat menyampaikan presentasi karya hobi di depan kelas? (Pilih SEMUA jawaban yang benar!)",
+                options: [
+                    "A. Berdiri tegak dan percaya diri",
+                    "B. Menggunakan lafal dan intonasi yang jelas",
+                    "C. Membelakangi audiens sambil berbisik",
+                    "D. Menjelaskan bahan dan proses pembuatan secara runtut"
+                ],
+                keys: [0, 1, 3], // A, B, D
+                explanation: "Presentasi baik membutuhkan sikap percaya diri, suara jelas, dan penjelasan materi yang runtut.",
+                hint: "Pilih 3 sikap pembicara yang santun dan efektif di depan umum."
+            },
+
+            // ---------------- MISSION 3: Ruang Interogasi Fakta (5 True / False) ----------------
+            {
+                id: 16,
+                mission: 3,
+                missionTitle: "MISI 3 — RUANG INTEROGASI FAKTA",
+                type: "tf",
+                caseTitle: "KASUS #16 — Definisi Takrir",
+                stem: "Pernyataan: Takrir (caption) adalah teks penjelasan atau keterangan singkat yang menyertai gambar atau video pada media sosial.",
+                key: true, // BENAR
+                explanation: "BENAR! Takrir secara bahasa merujuk pada keterangan/caption pada foto atau video unggahan.",
+                hint: "Ingat kembali arti istilah Takrir dalam media sosial."
+            },
+            {
+                id: 17,
+                mission: 3,
+                missionTitle: "MISI 3 — RUANG INTEROGASI FAKTA",
+                type: "tf",
+                caseTitle: "KASUS #17 — Kegunaan Tagar",
+                stem: "Pernyataan: Penggunaan tagar (#) tidak memiliki fungsi apapun dalam pencarian karya hobi di media sosial.",
+                key: false, // SALAH
+                explanation: "SALAH! Tagar (#) sangat berguna untuk memudahkan pengelompokkan dan pencarian konten secara digital.",
+                hint: "Apakah tagar membantu orang mencari topik karya?"
+            },
+            {
+                id: 18,
+                mission: 3,
+                missionTitle: "MISI 3 — RUANG INTEROGASI FAKTA",
+                type: "tf",
+                caseTitle: "KASUS #18 — Prinsip Reuse",
+                stem: "Pernyataan: Memanfaatkan kembali botol plastik bekas menjadi pot tanaman atau tempat pensil merupakan salah satu bentuk aksi reuse (penggunaan kembali).",
+                key: true, // BENAR
+                explanation: "BENAR! Menggunakan kembali wadah bekas tanpa mengolah bentuk dasar kimia merupakan prinsip Reuse.",
+                hint: "Reuse berarti memanfaatkan kembali barang yang masih layak."
+            },
+            {
+                id: 19,
+                mission: 3,
+                missionTitle: "MISI 3 — RUANG INTEROGASI FAKTA",
+                type: "tf",
+                caseTitle: "KASUS #19 — NILAI SEBUAH HOBI",
+                stem: "Pernyataan: Hobi hanya membuang-buang waktu dan tidak memiliki keterkaitan dengan bakat atau cita-cita seseorang di masa depan.",
+                key: false, // SALAH
+                explanation: "SALAH! Hobi justru mengasah bakat, minat, serta dapat mendukung cita-cita masa depan.",
+                hint: "Apakah hobi bermanfaat bagi bakat dan masa depan?"
+            },
+            {
+                id: 20,
+                mission: 3,
+                missionTitle: "MISI 3 — RUANG INTEROGASI FAKTA",
+                type: "tf",
+                caseTitle: "KASUS #20 — Sistematika Teks Prosedur",
+                stem: "Pernyataan: Dalam membuat teks petunjuk kerajinan tangan, urutan langkah-langkah kerja boleh acak dan tidak perlu berurutan.",
+                key: false, // SALAH
+                explanation: "SALAH! Teks prosedur wajib berurutan secara sistematis agar hasil karya berhasil dibuat.",
+                hint: "Apakah membuat kerajinan bisa tanpa urutan?"
+            },
+
+            // ---------------- MISSION 4: Brankas Kata Rahasia (5 Short Answer) ----------------
+            {
+                id: 21,
+                mission: 4,
+                missionTitle: "MISI 4 — BRANKAS KATA RAHASIA",
+                type: "short",
+                caseTitle: "KASUS #21 — Istilah Teks Gambar",
+                stem: "Teks pendek berupa keterangan gambar pada media sosial yang sering digunakan Reno untuk mengunggah hobinya disebut...",
+                accepted: ["takrir", "caption", "keterangan gambar", "teks takrir"],
+                explanation: "Jawaban yang tepat adalah Takrir atau Caption.",
+                hint: "Kata serapan resmi bahasa Indonesia untuk 'caption'."
+            },
+            {
+                id: 22,
+                mission: 4,
+                missionTitle: "MISI 4 — BRANKAS KATA RAHASIA",
+                type: "short",
+                caseTitle: "KASUS #22 — Bentuk Kerajinan Reno",
+                stem: "Reno memanfaatkan kardus bekas untuk membuat kerajinan berbentuk mainan miniatur seperti...",
+                accepted: ["rumah boneka", "rumah-rumahan", "mobil-mobilan", "miniatur", "robot", "rumah", "mainan"],
+                explanation: "Reno membuat kreasi mainan miniatur seperti rumah boneka atau mobil-mobilan dari kardus.",
+                hint: "Sebutkan jenis mainan yang dibuat dari kardus (misal: rumah boneka / mobil-mobilan)."
+            },
+            {
+                id: 23,
+                mission: 4,
+                missionTitle: "MISI 4 — BRANKAS KATA RAHASIA",
+                type: "short",
+                caseTitle: "KASUS #23 — Tujuan Edukasi Reno",
+                stem: "Tujuan Reno mengunggah tutorial membuat kerajinan di media sosial adalah untuk ... teman-temannya agar peduli lingkungan.",
+                accepted: ["menginspirasi", "mengajak", "memotivasi", "mendorong", "menghimbau", "memberi inspirasi"],
+                explanation: "Reno ingin menginspirasi, mengajak, atau memotivasi orang lain berkreasi positif.",
+                hint: "Kata kerja berimbuhan meng- yang berarti memberi semangat/dorongan."
+            },
+            {
+                id: 24,
+                mission: 4,
+                missionTitle: "MISI 4 — BRANKAS KATA RAHASIA",
+                type: "short",
+                caseTitle: "KASUS #24 — Perasaan Apresiasi",
+                stem: "Perasaan Reno ketika karyanya mendapat apresiasi positif dari guru dan teman-teman sekolahnya adalah sangat...",
+                accepted: ["senang", "gembira", "bahagia", "bangga", "terharu", "puas"],
+                explanation: "Apresiasi atas karya menghasilkan perasaan senang, bangga, atau bahagia.",
+                hint: "Kata sifat emosi bahagia/bangga."
+            },
+            {
+                id: 25,
+                mission: 4,
+                missionTitle: "MISI 4 — BRANKAS KATA RAHASIA",
+                type: "short",
+                caseTitle: "KASUS #25 — Simbol Kata Kunci",
+                stem: "Tanda pagar (#) yang digunakan sebelum kata kunci pada media sosial disebut istilah...",
+                accepted: ["tagar", "hashtag", "tanda pagar"],
+                explanation: "Istilah untuk simbol # adalah Tagar (Tanda Pagar) atau Hashtag.",
+                hint: "Singkatan dari Tanda Pagar."
+            },
+
+            // ---------------- MISSION 5: Dewan Detektif (5 Essay HOTS @ 20 Max Points / 4 Rubric Pts) ----------------
+            {
+                id: 26,
+                mission: 5,
+                missionTitle: "MISI 5 — DEWAN DETEKTIF SENIOR",
+                type: "essay",
+                caseTitle: "KASUS #26 — Analisis 3 Manfaat Daur Ulang",
+                stem: "Jelaskan 3 manfaat utama memanfaatkan sampah kardus dan botol plastik bekas untuk dijadikan karya kerajinan atau mainan hobi!",
+                keywords: ["sampah", "limbah", "kreatif", "kreativitas", "hemat", "uang", "lingkungan", "karya", "ekonomi", "manfaat", "kurang"],
+                rubricText: "Skor 4: Memuat 3 manfaat (lingkungan, kreativitas, hemat biaya)\nSkor 3: Memuat 2 manfaat\nSkor 2: Memuat 1 manfaat\nSkor 1: Jawaban minim/kurang tepat",
+                explanation: "Manfaat utama: (1) Mengurangi limbah sampah di lingkungan, (2) Melatih kreativitas & daya cipta, (3) Menghemat pengeluaran uang saku.",
+                hint: "Sebutkan unsur lingkungan, kreativitas, dan penghematan biaya."
+            },
+            {
+                id: 27,
+                mission: 5,
+                missionTitle: "MISI 5 — DEWAN DETEKTIF SENIOR",
+                type: "essay",
+                caseTitle: "KASUS #27 — Kreasi Takrir & Tagar",
+                stem: "Buatlah sebuah contoh takrir (caption) media sosial yang menarik, santun, dan memotivasi tentang hobimu memanfaatkan barang bekas, lengkap dengan minimal 2 tagar (#)!",
+                keywords: ["#", "kreatif", "daur ulang", "mari", "barang bekas", "hobi", "sahabat", "lingkungan", "sampah"],
+                rubricText: "Skor 4: Takrir santun + kalimat motivasi + minimal 2 tagar (#)\nSkor 3: Takrir santun + 1 tagar (#)\nSkor 2: Takrir tanpa tagar\nSkor 1: Teks acak/sangat singkat",
+                explanation: "Contoh Takrir yang baik: 'Jangan buang kardus bekasmu! Mari ubah menjadi tempat pensil cantik. #DaurUlangKreatif #HobiBerguna'",
+                hint: "Tulis kalimat ajakan santun dan akhiri dengan minimal 2 tagar bermula tanda #."
+            },
+            {
+                id: 28,
+                mission: 5,
+                missionTitle: "MISI 5 — DEWAN DETEKTIF SENIOR",
+                type: "essay",
+                caseTitle: "KASUS #28 — Peran Support System",
+                stem: "Mengapa dukungan keluarga dan orang-orang terdekat sangat penting bagi perkembangan hobi seorang anak? Jelaskan pendapatmu!",
+                keywords: ["semangat", "percaya diri", "dukungan", "fasilitas", "motivasi", "orang tua", "keluarga", "bakat", "mengembangkan"],
+                rubricText: "Skor 4: Penjelasan mendalam (memberi semangat, rasa aman, fasilitas & dorongan percaya diri)\nSkor 3: Penjelasan cukup baik\nSkor 2: Penjelasan singkat\nSkor 1: Kurang relevan",
+                explanation: "Dukungan keluarga memberi dorongan moral, rasa percaya diri, serta memfasilitasi kebutuhan anak dalam mengembangkan bakat hobinya.",
+                hint: "Jelaskan pengaruh pujian, semangat, dan fasilitas dari orang tua."
+            },
+            {
+                id: 29,
+                mission: 5,
+                missionTitle: "MISI 5 — DEWAN DETEKTIF SENIOR",
+                type: "essay",
+                caseTitle: "KASUS #29 — Solusi Empati & Mentoring",
+                stem: "Apabila kamu melihat temanmu merasa minder dan belum menemukan hobinya, langkah atau saran konkret apa yang bisa kamu berikan untuk membantunya?",
+                keywords: ["ajak", "mencoba", "minat", "bantu", "bersama", "dukung", "temani", "suka", "cari", "bersama"],
+                rubricText: "Skor 4: Menyampaikan 2-3 langkah konkret (mengajak mencoba bersama, menanyakan kegemaran, memberi semangat)\nSkor 3: Menyampaikan 2 saran\nSkor 2: Menyampaikan 1 saran sederhana\nSkor 1: Kurang sesuai",
+                explanation: "Langkah konkret: (1) Mengajak mencoba hobimu bersama, (2) Membantu mengenali kegiatan yang paling disukainya, (3) Memberi semangat tanpa membanding-bandingkan.",
+                hint: "Berikan saran ramah seperti mengajak berkreasi bersama atau berdiskusi."
+            },
+            {
+                id: 30,
+                mission: 5,
+                missionTitle: "MISI 5 — DEWAN DETEKTIF SENIOR",
+                type: "essay",
+                caseTitle: "KASUS #30 — Sintesis Hobi & Lingkungan",
+                stem: "Jelaskan bagaimana hubungan antara hobi, kreativitas, dan kepedulian lingkungan dapat saling berkaitan berdasarkan cerita inspiratif Reno!",
+                keywords: ["kreatif", "sampah", "lingkungan", "bekas", "daur ulang", "menjaga", "mengurangi", "karya", "kreativitas"],
+                rubricText: "Skor 4: Penjelasan runtut & logis (hobi memanfaatkan barang bekas melatih kreativitas sekaligus menjaga lingkungan dari sampah)\nSkor 3: Penjelasan cukup logis\nSkor 2: Menjelaskan sebagian saja\nSkor 1: Jawaban minim",
+                explanation: "Ketiganya berkaitan erat: Reno menyalurkan hobinya melalui kreativitas merangkai kardus bekas, yang secara langsung berdampak nyata menjaga lingkungan dari pencemaran sampah.",
+                hint: "Hubungkan kreasi barang bekas -> ide kreatif -> berkurangnya sampah."
+            }
+        ];
+
+        /* ==========================================================================
+           GAME STATE MANAGEMENT
+           ========================================================================== */
+        let gameState = {
+            playerName: "",
+            currentMission: 1,
+            currentQuestionIndex: 0,
+            scoreRaw: 0, // Out of 350 max
+            evidenceCount: 0, // Out of 30
+            lives: 3,
+            hintsLeft: 3,
+            answers: {}, // Stores user responses & calculated scores
+            unlockedBadges: [],
+            missionProgress: {
+                1: { completed: false, score: 0 },
+                2: { completed: false, score: 0 },
+                3: { completed: false, score: 0 },
+                4: { completed: false, score: 0 },
+                5: { completed: false, score: 0 }
+            }
+        };
+
+        const BAG_ITEMS = [
+            { id: 'm1', threshold: 5, icon: '🔍', name: 'Kaca Pembesar Reno', desc: 'Menemukan 5 bukti awal hobi!' },
+            { id: 'm2', threshold: 10, icon: '🗝️', name: 'Kunci Brankas Rahasia', desc: 'Berhasil mengumpulkan 10 bukti!' },
+            { id: 'm3', threshold: 15, icon: '📜', name: 'Catatan Kasus Daur Ulang', desc: 'Mencapai 15 bukti valid!' },
+            { id: 'm4', threshold: 20, icon: '🎥', name: 'Kamera Kreativitas', desc: 'Mengunggah 20 bukti di papan sekolah!' },
+            { id: 'm5', threshold: 25, icon: '♻️', name: 'Lencana Peduli Lingkungan', desc: 'Gelar Detektif Lingkungan Sejati (25+ bukti)!' }
+        ];
+
+        /* ==========================================================================
+           AUDIO SYNTHESIZER (Web Audio API - Zero External Files)
+           ========================================================================== */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            try {
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(160, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'stamp') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch (e) {
+                console.log("Audio play error", e);
+            }
+        }
+
+        /* ==========================================================================
+           NAVIGATION & UI VIEW CONTROLLER
+           ========================================================================== */
+        function showPage(pageId) {
+            ['welcome', 'map', 'question', 'results', 'review'].forEach(id => {
+                const el = document.getElementById(`page-${id}`);
+                if (el) el.classList.add('hidden');
+            });
+
+            const target = document.getElementById(`page-${pageId}`);
+            if (target) target.classList.remove('hidden');
+
+            const hud = document.getElementById('hud-bar');
+            if (pageId === 'welcome') {
+                hud.classList.add('hidden');
+            } else {
+                hud.classList.remove('hidden');
+            }
+        }
+
+        function handleStartGame(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (!nameInput) return;
+
+            gameState.playerName = nameInput;
+            document.getElementById('hud-player-name').innerText = `Detektif ${nameInput}`;
+            
+            playSound('click');
+            updateHUD();
+            renderMap();
+            showPage('map');
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-score').innerText = gameState.scoreRaw;
+            document.getElementById('hud-evidence').innerText = gameState.evidenceCount;
+            
+            // Hearts for lives
+            let heartsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                heartsHtml += i < gameState.lives ? '❤️' : '🖤';
+            }
+            document.getElementById('hud-lives').innerHTML = heartsHtml;
+
+            // Progress bar calculation (30 questions total)
+            const pct = Math.min(100, Math.round((gameState.evidenceCount / 30) * 100));
+            document.getElementById('hud-progress-bar').style.width = `${pct}%`;
+
+            // Bag badges count
+            checkBadgeUnlocks();
+        }
+
+        function checkBadgeUnlocks() {
+            let count = 0;
+            BAG_ITEMS.forEach(item => {
+                if (gameState.evidenceCount >= item.threshold && !gameState.unlockedBadges.includes(item.id)) {
+                    gameState.unlockedBadges.push(item.id);
+                }
+                if (gameState.unlockedBadges.includes(item.id)) count++;
+            });
+            document.getElementById('bag-count').innerText = count;
+        }
+
+        function toggleDetectiveBag() {
+            playSound('click');
+            const modal = document.getElementById('modal-bag');
+            const grid = document.getElementById('bag-items-grid');
+            
+            if (modal.classList.contains('hidden')) {
+                // Populate grid
+                grid.innerHTML = BAG_ITEMS.map(item => {
+                    const unlocked = gameState.unlockedBadges.includes(item.id);
+                    return `
+                        <div class="p-3 rounded-2xl border-2 ${unlocked ? 'bg-amber-50 border-amber-500 shadow' : 'bg-amber-900/40 border-amber-700/50 opacity-50'} flex flex-col items-center text-center">
+                            <span class="text-3xl mb-1">${unlocked ? item.icon : '🔒'}</span>
+                            <span class="font-display font-bold text-xs ${unlocked ? 'text-amber-950' : 'text-amber-300/70'}">${item.name}</span>
+                            <span class="text-[10px] text-amber-800/80 mt-1">${unlocked ? item.desc : `Buka pada ${item.threshold} bukti`}</span>
+                        </div>
+                    `;
+                }).join('');
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        /* ==========================================================================
+           MISSION MAP RENDERER
+           ========================================================================== */
+        function renderMap() {
+            let completedCount = 0;
+            for (let i = 1; i <= 5; i++) {
+                const card = document.getElementById(`mission-card-${i}`);
+                const statusSpan = document.getElementById(`m${i}-status`);
+
+                const isUnlocked = (i === 1) || (gameState.missionProgress[i - 1] && gameState.missionProgress[i - 1].completed);
+                const isDone = gameState.missionProgress[i] && gameState.missionProgress[i].completed;
+
+                if (isDone) completedCount++;
+
+                if (isDone) {
+                    card.className = "cursor-pointer bg-emerald-100/90 rounded-2xl p-5 border-4 border-emerald-500 shadow-lg relative overflow-hidden transition-all";
+                    statusSpan.className = "px-2.5 py-0.5 rounded bg-emerald-600 text-white font-bold";
+                    statusSpan.innerText = "Selesai ✅";
+                    card.onclick = () => startMission(i);
+                } else if (isUnlocked) {
+                    card.className = "cursor-pointer bg-amber-50 rounded-2xl p-5 border-4 border-amber-500 shadow-xl hover:-translate-y-1 transition-all relative overflow-hidden group";
+                    statusSpan.className = "px-2.5 py-0.5 rounded bg-amber-500 text-amber-950 font-bold";
+                    statusSpan.innerText = "Buka Misi 🔓";
+                    card.onclick = () => startMission(i);
+                } else {
+                    card.className = "opacity-50 cursor-not-allowed bg-amber-950/40 rounded-2xl p-5 border-4 border-amber-800 shadow relative overflow-hidden transition-all";
+                    statusSpan.className = "px-2.5 py-0.5 rounded bg-amber-900/80 text-amber-300/60 font-semibold";
+                    statusSpan.innerText = "Terkunci 🔒";
+                    card.onclick = null;
+                }
+            }
+
+            document.getElementById('map-status-text').innerText = `${completedCount}/5 Misi Selesai`;
+
+            if (completedCount === 5) {
+                showFinalResults();
+            }
+        }
+
+        function startMission(missionNum) {
+            playSound('click');
+            gameState.currentMission = missionNum;
+            
+            // Find first uncompleted question index in this mission or default to start
+            const missionQs = QUESTIONS.filter(q => q.mission === missionNum);
+            const firstUnanswered = missionQs.find(q => !gameState.answers[q.id]);
+            
+            if (firstUnanswered) {
+                gameState.currentQuestionIndex = QUESTIONS.findIndex(q => q.id === firstUnanswered.id);
+            } else {
+                gameState.currentQuestionIndex = QUESTIONS.findIndex(q => q.mission === missionNum);
+            }
+
+            renderQuestion();
+            showPage('question');
+        }
+
+        /* ==========================================================================
+           QUESTION RENDERER & INTERACTION
+           ========================================================================== */
+        function renderQuestion() {
+            const q = QUESTIONS[gameState.currentQuestionIndex];
+            if (!q) return;
+
+            document.getElementById('q-mission-badge').innerText = q.missionTitle;
+            document.getElementById('q-case-number').innerText = `🔎 ${q.caseTitle}`;
+            document.getElementById('q-stem').innerText = q.stem;
+            document.getElementById('btn-hint').disabled = gameState.hintsLeft <= 0;
+            document.getElementById('hint-count').innerText = gameState.hintsLeft;
+            document.getElementById('hint-box').classList.add('hidden');
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            // Render options based on Question Type
+            if (q.type === 'single') {
+                q.options.forEach((opt, idx) => {
+                    container.innerHTML += `
+                        <label class="flex items-center gap-3 p-4 rounded-2xl bg-amber-100/70 border-2 border-amber-300 hover:bg-amber-200/80 hover:border-amber-400 cursor-pointer transition shadow-sm">
+                            <input type="radio" name="q-option" value="${idx}" required class="w-5 h-5 text-amber-600 focus:ring-amber-500">
+                            <span class="text-amber-950 font-semibold text-sm sm:text-base">${opt}</span>
+                        </label>
+                    `;
+                });
+            } else if (q.type === 'mcma') {
+                container.innerHTML += `<p class="text-xs font-bold text-amber-700 bg-amber-200 px-3 py-1 rounded-lg inline-block">💡 Pilih SEMUA opsi yang menurutmu benar!</p>`;
+                q.options.forEach((opt, idx) => {
+                    container.innerHTML += `
+                        <label class="flex items-center gap-3 p-4 rounded-2xl bg-amber-100/70 border-2 border-amber-300 hover:bg-amber-200/80 cursor-pointer transition shadow-sm">
+                            <input type="checkbox" name="q-mcma-option" value="${idx}" class="w-5 h-5 rounded text-amber-600 focus:ring-amber-500">
+                            <span class="text-amber-950 font-semibold text-sm sm:text-base">${opt}</span>
+                        </label>
+                    `;
+                });
+            } else if (q.type === 'tf') {
+                container.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <label class="flex flex-col items-center justify-center p-5 rounded-2xl bg-emerald-100 border-4 border-emerald-400 hover:bg-emerald-200 cursor-pointer transition shadow text-center group">
+                            <input type="radio" name="q-tf-option" value="true" required class="sr-only peer">
+                            <span class="text-4xl mb-1 group-hover:scale-110 transition-transform">✅</span>
+                            <span class="font-display font-bold text-xl text-emerald-900 peer-checked:text-emerald-700">BENAR</span>
+                            <span class="text-xs text-emerald-700 mt-1">Stempel Bukti Valid</span>
+                        </label>
+                        <label class="flex flex-col items-center justify-center p-5 rounded-2xl bg-rose-100 border-4 border-rose-400 hover:bg-rose-200 cursor-pointer transition shadow text-center group">
+                            <input type="radio" name="q-tf-option" value="false" required class="sr-only peer">
+                            <span class="text-4xl mb-1 group-hover:scale-110 transition-transform">❌</span>
+                            <span class="font-display font-bold text-xl text-rose-900 peer-checked:text-rose-700">SALAH</span>
+                            <span class="text-xs text-rose-700 mt-1">Stempel Tidak Valid</span>
+                        </label>
+                    </div>
+                `;
+            } else if (q.type === 'short') {
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-amber-800">🔐 Masukkan Kata Kunci Brankas Rahasia:</label>
+                        <input type="text" id="q-short-input" required placeholder="Ketik jawaban singkat di sini..." 
+                            class="w-full px-4 py-3.5 rounded-2xl border-2 border-amber-400 focus:border-amber-600 focus:ring-4 focus:ring-amber-200 outline-none text-amber-950 font-semibold text-base bg-amber-50 shadow-inner">
+                    </div>
+                `;
+            } else if (q.type === 'essay') {
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs text-amber-800 font-bold">
+                            <span>🎓 Analisis Kasus Uraian (Skor Maks 20 / Rubrik 4 Poin):</span>
+                            <span>Dewan Detektif Senior Memeriksa</span>
+                        </div>
+                        <textarea id="q-essay-input" rows="5" required placeholder="Tuliskan analisis jawabanmu secara lengkap dan jelas..." 
+                            class="w-full p-4 rounded-2xl border-2 border-amber-400 focus:border-amber-600 focus:ring-4 focus:ring-amber-200 outline-none text-amber-950 font-medium text-sm sm:text-base bg-amber-50 shadow-inner"></textarea>
+                    </div>
+                `;
+            }
+        }
+
+        function useHint() {
+            if (gameState.hintsLeft <= 0) return;
+            const q = QUESTIONS[gameState.currentQuestionIndex];
+            if (!q) return;
+
+            gameState.hintsLeft--;
+            playSound('click');
+            
+            document.getElementById('hint-count').innerText = gameState.hintsLeft;
+            document.getElementById('hint-text').innerText = q.hint;
+            document.getElementById('hint-box').classList.remove('hidden');
+            document.getElementById('btn-hint').disabled = gameState.hintsLeft <= 0;
+        }
+
+        /* ==========================================================================
+           ANSWER EVALUATION & SCORING SYSTEM
+           ========================================================================== */
+        function handleAnswerSubmit(e) {
+            e.preventDefault();
+            const q = QUESTIONS[gameState.currentQuestionIndex];
+            if (!q) return;
+
+            let isCorrect = false;
+            let earnedPoints = 0;
+            let userAnsString = "";
+
+            if (q.type === 'single') {
+                const selected = document.querySelector('input[name="q-option"]:checked');
+                if (!selected) return;
+                const val = parseInt(selected.value);
+                userAnsString = q.options[val];
+                if (val === q.key) {
+                    isCorrect = true;
+                    earnedPoints = 10;
+                }
+            } else if (q.type === 'mcma') {
+                const checkedNodes = document.querySelectorAll('input[name="q-mcma-option"]:checked');
+                const selectedVals = Array.from(checkedNodes).map(n => parseInt(n.value));
+                userAnsString = selectedVals.map(v => q.options[v]).join("; ");
+
+                // Check exact match with key array
+                const keysArr = q.keys;
+                const exactMatch = selectedVals.length === keysArr.length && selectedVals.every(val => keysArr.includes(val));
+                
+                if (exactMatch) {
+                    isCorrect = true;
+                    earnedPoints = 10;
+                } else {
+                    // Partial logic rule: If at least one correct and no wrong ones picked
+                    const hasWrong = selectedVals.some(v => !keysArr.includes(v));
+                    const correctCount = selectedVals.filter(v => keysArr.includes(v)).length;
+                    if (!hasWrong && correctCount > 0) {
+                        earnedPoints = Math.round((correctCount / keysArr.length) * 10);
+                        isCorrect = false;
+                    }
+                }
+            } else if (q.type === 'tf') {
+                const selected = document.querySelector('input[name="q-tf-option"]:checked');
+                if (!selected) return;
+                const val = selected.value === 'true';
+                userAnsString = val ? "BENAR (Bukti Valid)" : "SALAH (Bukti Tidak Valid)";
+                if (val === q.key) {
+                    isCorrect = true;
+                    earnedPoints = 10;
+                }
+            } else if (q.type === 'short') {
+                const inputVal = document.getElementById('q-short-input').value.trim();
+                userAnsString = inputVal;
+                const normInput = inputVal.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                // Flexible matching against accepted variations
+                const matchFound = q.accepted.some(acc => {
+                    const normAcc = acc.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return normInput.includes(normAcc) || normAcc.includes(normInput);
+                });
+
+                if (matchFound && normInput.length > 0) {
+                    isCorrect = true;
+                    earnedPoints = 10;
+                }
+            } else if (q.type === 'essay') {
+                const inputVal = document.getElementById('q-essay-input').value.trim();
+                userAnsString = inputVal;
+                
+                // Rubric Keyword Auto-grader (0 to 4 rubric points -> converted to max 20 raw points)
+                const lowerText = inputVal.toLowerCase();
+                let matchHits = 0;
+                q.keywords.forEach(kw => {
+                    if (lowerText.includes(kw.toLowerCase())) matchHits++;
+                });
+
+                let rubricScore = 1;
+                if (inputVal.length > 50 && matchHits >= 4) rubricScore = 4;
+                else if (inputVal.length > 30 && matchHits >= 2) rubricScore = 3;
+                else if (inputVal.length > 15 || matchHits >= 1) rubricScore = 2;
+                
+                earnedPoints = rubricScore * 5; // 4 * 5 = 20 max points
+                isCorrect = rubricScore >= 3;
+            }
+
+            // Save Answer Record
+            gameState.answers[q.id] = {
+                questionId: q.id,
+                userAnswer: userAnsString,
+                isCorrect: isCorrect,
+                pointsEarned: earnedPoints,
+                explanation: q.explanation
+            };
+
+            // Update stats
+            gameState.scoreRaw += earnedPoints;
+            if (isCorrect || earnedPoints > 0) {
+                gameState.evidenceCount++;
+            } else {
+                gameState.lives = Math.max(0, gameState.lives - 1);
+            }
+
+            updateHUD();
+
+            // Show Feedback Modal
+            showFeedbackModal(isCorrect, earnedPoints, q);
+        }
+
+        function showFeedbackModal(isCorrect, points, question) {
+            playSound(isCorrect ? (question.type === 'tf' ? 'stamp' : 'correct') : 'wrong');
+
+            const modal = document.getElementById('feedback-modal');
+            const icon = document.getElementById('feedback-icon');
+            const title = document.getElementById('feedback-title');
+            const text = document.getElementById('feedback-text');
+            const pointsEl = document.getElementById('feedback-points');
+
+            if (question.type === 'tf') {
+                icon.innerText = question.key ? "🏷️ BUKTI VALID" : "⚠️ BUKTI TIDAK VALID";
+            } else {
+                icon.innerText = isCorrect ? "🎉" : "🔎";
+            }
+
+            if (isCorrect) {
+                title.innerText = "Bukti Berhasil Ditemukan!";
+                title.className = "font-display text-2xl font-bold mb-2 text-emerald-800";
+            } else if (points > 0) {
+                title.innerText = "Analisis Cukup Tepat!";
+                title.className = "font-display text-2xl font-bold mb-2 text-amber-800";
+            } else {
+                title.innerText = "Coba Periksa Kembali Petunjuknya!";
+                title.className = "font-display text-2xl font-bold mb-2 text-rose-800";
+            }
+
+            text.innerText = question.explanation;
+            pointsEl.innerText = `+${points} Poin Detektif ⭐`;
+
+            modal.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            document.getElementById('feedback-modal').classList.add('hidden');
+
+            const currentQ = QUESTIONS[gameState.currentQuestionIndex];
+            const missionQs = QUESTIONS.filter(q => q.mission === gameState.currentMission);
+            const currentMissionIndex = missionQs.findIndex(q => q.id === currentQ.id);
+
+            if (currentMissionIndex < missionQs.length - 1) {
+                // Next question in same mission
+                const nextQInMission = missionQs[currentMissionIndex + 1];
+                gameState.currentQuestionIndex = QUESTIONS.findIndex(q => q.id === nextQInMission.id);
+                renderQuestion();
+            } else {
+                // Mission Completed!
+                gameState.missionProgress[gameState.currentMission].completed = true;
+                renderMap();
+                showPage('map');
+            }
+        }
+
+        /* ==========================================================================
+           FINAL RESULTS & LEVEL RANKS
+           ========================================================================== */
+        function showFinalResults() {
+            showPage('results');
+            playSound('correct');
+
+            // Trigger Confetti Explosion
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            const raw = gameState.scoreRaw; // Max 350
+            const finalGrade = Math.round((raw / 350) * 100 * 10) / 10; // Converted 0-100 score
+
+            document.getElementById('res-player-name').innerText = gameState.playerName;
+            document.getElementById('res-score-raw').innerText = `${raw} / 350`;
+            document.getElementById('res-grade-final').innerText = finalGrade;
+            document.getElementById('res-correct-count').innerText = `${gameState.evidenceCount} dari 30`;
+            document.getElementById('res-accuracy').innerText = `${Math.round((gameState.evidenceCount / 30) * 100)}%`;
+
+            // System Ranks Level
+            const badgeIcon = document.getElementById('res-badge-icon');
+            const levelTitle = document.getElementById('res-level-title');
+            const levelDesc = document.getElementById('res-level-desc');
+
+            if (finalGrade >= 90) {
+                badgeIcon.innerText = "🏆";
+                levelTitle.innerText = "MASTER DETEKTIF HOBI";
+                levelDesc.innerText = "“Analisis luar biasa! Kamu memiliki kecerdasan tajam dan pemahaman sempurna tentang ekspresi diri, manfaat hobi, serta kepedulian lingkungan!”";
+            } else if (finalGrade >= 80) {
+                badgeIcon.innerText = "🥇";
+                levelTitle.innerText = "DETEKTIF AHLI";
+                levelDesc.innerText = "“Hebat sekali! Keterampilan analisismu sangat akurat dan berhasil memecahkan hampir seluruh rahasia hobi Reno!”";
+            } else if (finalGrade >= 70) {
+                badgeIcon.innerText = "🥈";
+                levelTitle.innerText = "DETEKTIF TERAMPIL";
+                levelDesc.innerText = "“Kerja bagus! Kamu sudah memahami berbagai konsep hobi dan takrir media sosial dengan sangat baik!”";
+            } else if (finalGrade >= 60) {
+                badgeIcon.innerText = "🥉";
+                levelTitle.innerText = "DETEKTIF PEMULA";
+                levelDesc.innerText = "“Usaha yang membanggakan! Terus tingkatkan kemampuan analisismu untuk menjadi detektif senior!”";
+            } else {
+                badgeIcon.innerText = "🔎";
+                levelTitle.innerText = "DETEKTIF MAGANG";
+                levelDesc.innerText = "“Tetap semangat! Setiap latihan membuatmu semakin dekat untuk menjadi detektif hobi sejati!”";
+            }
+        }
+
+        /* ==========================================================================
+           REVIEW & EVALUATION PAGE
+           ========================================================================== */
+        function showReviewPage() {
+            playSound('click');
+            const list = document.getElementById('review-list');
+            list.innerHTML = '';
+
+            QUESTIONS.forEach((q, idx) => {
+                const rec = gameState.answers[q.id] || { userAnswer: 'Tidak dijawab', isCorrect: false, pointsEarned: 0 };
+                
+                let keyDisplay = "";
+                if (q.type === 'single') keyDisplay = q.options[q.key];
+                else if (q.type === 'mcma') keyDisplay = q.keys.map(k => q.options[k]).join("; ");
+                else if (q.type === 'tf') keyDisplay = q.key ? "BENAR" : "SALAH";
+                else if (q.type === 'short') keyDisplay = q.accepted.join(" / ");
+                else if (q.type === 'essay') keyDisplay = q.rubricText;
+
+                list.innerHTML += `
+                    <div class="p-4 rounded-2xl border-2 ${rec.isCorrect ? 'bg-emerald-50 border-emerald-300' : 'bg-rose-50 border-rose-300'} text-xs sm:text-sm">
+                        <div class="flex justify-between font-bold mb-1 text-amber-950">
+                            <span>Kasus #${idx + 1}: ${q.caseTitle}</span>
+                            <span class="${rec.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">${rec.isCorrect ? '✅ Benar (+10)' : `Skor: ${rec.pointsEarned}`}</span>
+                        </div>
+                        <p class="font-semibold text-slate-800 mb-2">${q.stem}</p>
+                        <div class="space-y-1 bg-white/70 p-3 rounded-xl border border-amber-200/60">
+                            <div><span class="font-bold text-amber-900">Jawabanmu:</span> ${rec.userAnswer}</div>
+                            <div><span class="font-bold text-emerald-800">Kunci/Rubrik Resmi:</span> ${keyDisplay}</div>
+                            <div class="text-amber-900/80 pt-1 italic"><span class="font-bold">Penjelasan:</span> ${q.explanation}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            showPage('review');
+        }
+
+        function restartGame() {
+            playSound('click');
+            gameState = {
+                playerName: gameState.playerName,
+                currentMission: 1,
+                currentQuestionIndex: 0,
+                scoreRaw: 0,
+                evidenceCount: 0,
+                lives: 3,
+                hintsLeft: 3,
+                answers: {},
+                unlockedBadges: [],
+                missionProgress: {
+                    1: { completed: false, score: 0 },
+                    2: { completed: false, score: 0 },
+                    3: { completed: false, score: 0 },
+                    4: { completed: false, score: 0 },
+                    5: { completed: false, score: 0 }
+                }
+            };
+            updateHUD();
+            renderMap();
+            showPage('map');
+        }
+
+        // Initialize state on load
+        window.onload = function() {
+            showPage('welcome');
+        };
+    </script>
+</body>
+</html>
